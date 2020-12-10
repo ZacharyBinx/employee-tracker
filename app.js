@@ -37,8 +37,8 @@ async function init() {
       break;
   }
 }
-
-// * A query which returns all data for songs sung by a specific artist
+/////////////////////////////////////////////////////////////////////////////////////
+// Edit department functions
 async function editDepartments() {
   const { department } = await inquirer.prompt({
     name: "department",
@@ -50,13 +50,13 @@ async function editDepartments() {
       "Exit"
     ]
   })
-  if ( department === "Add Department") {
+  if (department === "Add Department") {
     addDepartment();
   }
-  if ( department === "Remove Department") {
+  if (department === "Remove Department") {
     remDepartment();
   }
-  if ( department === "Exit") {
+  if (department === "Exit") {
     init();
   }
 };
@@ -100,21 +100,102 @@ async function remDepartment() {
       ]);
       connection.query(
         "DELETE FROM department WHERE ?", {
-          dept: data.departments,
-        }),
-      init();
+        dept: data.departments,
+      }),
+        init();
     }
   );
 }
+/////////////////////////////////////////////////////////////////////////////////////
+//start of edit employee
+async function editEmployee() {
+  const { employee } = await inquirer.prompt({
+    name: "employee",
+    type: "list",
+    message: "What would you like to do?",
+    choices: ["Add Employee", "Remove Employee", "Exit"],
+  });
+  if (employee === "Add Employee") {
+    addEmployee();
+  } else if (employee === "Remove Employee") {
+    removeEmployee();
+  } else {
+    init();
+  }
+}
 
-  // const departmentName = await inquirer.prompt({
-  //   name: "department",
-  //   type: "list",
-  //   message: "What department are you removing",
-  //   choices: deepStrictEqual.map((dept) => ({
+async function addEmployee() {
+  const add = await inquirer.prompt([
+    {
+      name: "firstName",
+      type: "input",
+      message: "What is the employee's first name?",
+    },
+    {
+      name: "lastName",
+      type: "input",
+      message: "What is the employee's last name?",
+    },
+    {
+      name: "roleID",
+      type: "list",
+      message: "What is the employee's role?",
+      choices: [
+        "Intern",
+        "IT",
+        "Janitor",
+      ]
+    },
+    {
+      name: "managerID",
+      type: "confirm",
+      message: "Is the employee a manager?",
+    },
+  ]);
+  switch (add.roleID) {
+    case "Intern":
+      add.roleID = 1;
+      break;
+    case "IT":
+      add.roleID = 2;
+      break;
+    case "Janitor":
+      add.roleID = 3;
+      break;
+  }
+  switch (add.managerID) {
+    case true:
+      add.managerID = 1;
+      break;
+      case false:
+      add.managerID = null;
+      break;
+  }
+  const query = await connection.query(
+    "INSERT INTO employee SET ?",
+    {
+      first_name: add.firstName,
+      last_name: add.lastName,
+      role_id: add.roleID,
+      manager_id: add.managerID,
+    },
 
-  //   }))
-  // });
+    function (err, res) {
+      if (err) throw err;
+      console.log(res.affectedRows + " Employee Added\n");
+      init();
+    });
+}
+
+
+// const departmentName = await inquirer.prompt({
+//   name: "department",
+//   type: "list",
+//   message: "What department are you removing",
+//   choices: deepStrictEqual.map((dept) => ({
+
+//   }))
+// });
 
 //   const data = departmentName.department
 
