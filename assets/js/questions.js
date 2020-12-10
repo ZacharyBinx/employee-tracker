@@ -1,11 +1,11 @@
-module.exports = [
+const questions = [
     {
         name: "action",
         type: "list",
         message: "What would you like to do?",
         choices: [
             "Edit Department",
-            "Edit Role",
+            "Edit Employee Role",
             "Edit Employee",
             "View All Employees",
             "Search Employees By Manager",
@@ -14,3 +14,5 @@ module.exports = [
             "Exit",
         ]
     }];
+
+    module.exports = questions;

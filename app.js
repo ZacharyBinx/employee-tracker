@@ -1,6 +1,7 @@
 const connection = require("./assets/js/connection");
 const inquirer = require("inquirer");
-const questions = require("/assets/js/questions")
+const questions = require("./assets/js/questions");
+const { deepStrictEqual } = require("assert");
 
 // Start our application
 init();
@@ -9,25 +10,25 @@ async function init() {
   const { action } = await inquirer.prompt(questions);
   switch (action) {
     case "Edit Department":
-      specificArtist();
+      editDepartments();
       break;
-    case "Edit Role":
-      multiSearch();
+    case "Edit Employee Role":
+      editRole();
       break;
     case "Edit Employee":
-      rangeSearch();
+      editEmployee();
       break;
     case "View All Employees":
-      specificSong();
+      viewEmployees();
       break;
     case "Search Employees By Manager":
-      songAndAlbumSearch();
+      employeeByManager();
       break;
     case "Update Employee Managers":
-      songAndAlbumSearch();
+      updateManager();
       break;
     case "Total Budget By Department":
-      songAndAlbumSearch();
+      departmentBudget();
       break;
     case "Exit":
       process.exit(0);
@@ -38,19 +39,108 @@ async function init() {
 }
 
 // * A query which returns all data for songs sung by a specific artist
-async function specificArtist() {
-  const { artist } = await inquirer.prompt({
-    name: "artist",
+async function editDepartments() {
+  const { department } = await inquirer.prompt({
+    name: "department",
+    type: "list",
+    message: "Choose one of the following:",
+    choices: [
+      "Add Department",
+      "Remove Department",
+      "Exit"
+    ]
+  })
+  if ( department === "Add Department") {
+    addDepartment();
+  }
+  if ( department === "Remove Department") {
+    remDepartment();
+  }
+  if ( department === "Exit") {
+    init();
+  }
+};
+
+async function addDepartment() {
+  const departmentName = await inquirer.prompt({
+    name: "department",
     type: "input",
-    message: "What artist would you like to search for?",
+    message: "What department are you adding",
   });
 
-  const query = "SELECT position, song, year FROM top5000 WHERE ?";
-  // SELECT position, song, year FROM top5000 WHERE artist = "Led Zeppelin"
-  const data = await connection.query(query, { artist });
-  console.table(data);
-  init();
+  const data = departmentName.department
+
+  const query = await connection.query(
+    "INSERT INTO department SET ?",
+    {
+      dept: data,
+    },
+
+    function (err, res) {
+      if (err) throw err;
+      console.log(res.affectedRows + " Department Added\n");
+      init();
+    });
 }
+
+async function remDepartment() {
+  connection.query(
+    "SELECT dept AS departments FROM department",
+    async function (err, departments) {
+      const data = await inquirer.prompt([
+        {
+          name: "departments",
+          message: "What department would you like to remove?",
+          type: "list",
+          choices: departments.map((department) => ({
+            name: department.departments,
+          })),
+        },
+
+      ]);
+      connection.query(
+        "DELETE FROM department WHERE ?", {
+          dept: data.departments,
+        }),
+      init();
+    }
+  );
+}
+
+  // const departmentName = await inquirer.prompt({
+  //   name: "department",
+  //   type: "list",
+  //   message: "What department are you removing",
+  //   choices: deepStrictEqual.map((dept) => ({
+
+  //   }))
+  // });
+
+//   const data = departmentName.department
+
+//   const query = await connection.query(
+//     "INSERT INTO department SET ?",
+//     {
+//       dept: data,
+//     },
+
+//     function (err, res) {
+//       if (err) throw err;
+//       console.log(res.affectedRows + " Department Added\n");
+//       init();
+//     });
+// }
+
+
+
+
+// const query = "SELECT position, song, year FROM top5000 WHERE ?";
+// // SELECT position, song, year FROM top5000 WHERE artist = "Led Zeppelin"
+// const data = await connection.query(query, { artist });
+// console.table(data);
+// init();
+
+
 
 // * A query which returns all artists who appear within the top 5000 more than once
 async function multiSearch() {
@@ -105,24 +195,6 @@ async function specificSong() {
   const data = await connection.query("SELECT * FROM top5000 WHERE ?", {
     song,
   });
-  console.table(data);
-  init();
-}
-
-async function songAndAlbumSearch() {
-  const { artist } = await inquirer.prompt({
-    name: "artist",
-    type: "input",
-    message: "What artist would you like to search for?",
-  });
-  const query = `
-  SELECT top5000.artist, top5000.song, top_albums.year, top_albums.album, top_albums.position
-  FROM top5000 INNER JOIN top_albums
-  ON top_albums.artist = top5000.artist AND top_albums.year = top5000.year
-  WHERE top_albums.artist = ? AND top5000.artist = ?
-  ORDER BY top_albums.position`;
-
-  const data = await connection.query(query, [artist, artist]);
   console.table(data);
   init();
 }
