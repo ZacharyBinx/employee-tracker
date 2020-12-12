@@ -1,7 +1,9 @@
 const connection = require("./assets/js/connection");
 const inquirer = require("inquirer");
 const questions = require("./assets/js/questions");
-const { deepStrictEqual } = require("assert");
+// const logo = require('asciiart-logo');
+// const config = require('./package.json');
+// console.log(logo(config).render());
 
 // Start our application
 init();
@@ -18,17 +20,8 @@ async function init() {
     case "Edit Employee":
       editEmployee();
       break;
-    case "View All Employees":
-      viewEmployees();
-      break;
-    case "Search Employees By Manager":
-      employeeByManager();
-      break;
-    case "Update Employee Managers":
-      updateManager();
-      break;
-    case "Total Budget By Department":
-      departmentBudget();
+    case "View Information":
+      viewInfo();
       break;
     case "Exit":
       process.exit(0);
@@ -96,7 +89,6 @@ async function remDepartment() {
             name: department.departments,
           })),
         },
-
       ]);
       connection.query(
         "DELETE FROM department WHERE ?", {
@@ -124,6 +116,8 @@ async function editEmployee() {
   }
 }
 
+///////////////////////////////////////////////////////////////////
+//// Add employee function
 async function addEmployee() {
   const add = await inquirer.prompt([
     {
@@ -167,7 +161,7 @@ async function addEmployee() {
     case true:
       add.managerID = 1;
       break;
-      case false:
+    case false:
       add.managerID = null;
       break;
   }
@@ -187,95 +181,145 @@ async function addEmployee() {
     });
 }
 
-
-// const departmentName = await inquirer.prompt({
-//   name: "department",
-//   type: "list",
-//   message: "What department are you removing",
-//   choices: deepStrictEqual.map((dept) => ({
-
-//   }))
-// });
-
-//   const data = departmentName.department
-
-//   const query = await connection.query(
-//     "INSERT INTO department SET ?",
-//     {
-//       dept: data,
-//     },
-
-//     function (err, res) {
-//       if (err) throw err;
-//       console.log(res.affectedRows + " Department Added\n");
-//       init();
-//     });
-// }
-
-
-
-
-// const query = "SELECT position, song, year FROM top5000 WHERE ?";
-// // SELECT position, song, year FROM top5000 WHERE artist = "Led Zeppelin"
-// const data = await connection.query(query, { artist });
-// console.table(data);
-// init();
-
-
-
-// * A query which returns all artists who appear within the top 5000 more than once
-async function multiSearch() {
-  const query =
-    "SELECT artist, count(*) AS count FROM top5000 GROUP BY artist HAVING count(*) > 1 ORDER BY count DESC";
-  const data = await connection.query(query);
-  console.table(data);
-  init();
+////////////////////////////////////////////////////////////////////
+////////Employee remove function
+async function removeEmployee() {
+  connection.query(
+    "SELECT first_name AS firstName, last_name AS lastName FROM employee",
+    async function (err, employees) {
+      const data = await inquirer.prompt([
+        {
+          name: "employees",
+          message: "Which employee would you like to remove?",
+          type: "list",
+          choices: employees.map((employee) => ({
+            name: employee.firstName + " " + employee.lastName,
+          })),
+        },
+      ]);
+      console.log(data);
+      const firstAndLast = data.employees.split(" ");
+      console.log(firstAndLast[1]);
+      connection.query(
+        "DELETE FROM employee WHERE first_name = ? AND last_name = ?",
+        [firstAndLast[0], firstAndLast[1]]
+      );
+      init();
+    }
+  );
 }
-// * A query which returns all data contained within a specific range
-async function rangeSearch() {
-  const { start, end } = await inquirer.prompt([
+//////////////////////////////////////////////////////////////////////////////////////////////
+//Edit role
+
+async function editRole() {
+  const { role } = await inquirer.prompt({
+    name: "role",
+    type: "list",
+    message: "What would you like to do?",
+    choices: ["Add Role", "Update Role", "Remove Role", "Exit"],
+  });
+  if (role === "Add Role") {
+    addRole();
+  } else if (role === "Update Role") {
+    updateRole();
+    // } else if (role === "Remove Role") {
+    //   removeRole();
+  } else {
+    init();
+  }
+};
+
+async function addRole() {
+  const departments = await connection.query(
+    "SELECT dept, id FROM department",
+  )
+  console.log(departments);
+  const { dept, title, salary } = await inquirer.prompt([
     {
-      name: "start",
-      type: "input",
-      message: "Enter starting position: ",
-      validate: function (value) {
-        if (isNaN(value) === false) {
-          return true;
-        }
-        return false;
-      },
+      name: "dept",
+      type: "list",
+      message: "Which departments will this role be associated with?",
+      choices: departments.map((row) => ({ name: row.dept, value: row.id })),
     },
     {
-      name: "end",
+      name: "title",
       type: "input",
-      message: "Enter ending position: ",
-      validate: function (value) {
-        if (isNaN(value) === false) {
-          return true;
-        }
-        return false;
-      },
+      message: "What role are you creating?",
     },
-  ]);
+    {
+      name: "salary",
+      type: "number",
+      message: "What is the salary for this role?",
+    },
+  ])
+  connection.query(`INSERT INTO role (title, salary, dept_id) VALUES ('${title}', ${salary}, ${dept})`,
 
-  const query = `SELECT position,song,artist,year FROM top5000 WHERE position BETWEEN ${connection.escape(
-    start
-  )} AND ${connection.escape(end)}`;
-  const data = await connection.query(query);
-  console.table(data);
-  init();
-}
+    function (err, res) {
+      if (err) throw err;
+      console.log(res.affectedRows + " Role Added\n");
+      init();
+    });
+};
 
-// * A query which searches for a specific song in the top 5000 and returns the data for it
-async function specificSong() {
-  const { song } = await inquirer.prompt({
-    name: "song",
-    type: "input",
-    message: "What song would you like to look for?",
+///////////////////////////////////////////////////////////////////////////////////////////
+//Edit role
+
+async function updateRole() {
+  const employees = await connection.query(
+    "SELECT first_name AS firstName, last_name AS lastName, id FROM employee")
+  const roles = await connection.query(
+    "SELECT id, title, salary FROM role",
+  )
+  const { employee, role } = await inquirer.prompt([
+    {
+      name: "employee",
+      type: "list",
+      message: "Select an employee to update:",
+      choices: employees.map((employee) => ({
+        name: employee.firstName + " " + employee.lastName, value: employee.id
+      })),
+    },
+    {
+      name: "role",
+      type: "list",
+      message: "Select the new role:",
+      choices: roles.map((row) => ({ name: row.title, value: row.id })),
+    },
+  ])
+  connection.query(`UPDATE employee SET role_id = ${role} WHERE  id = ${employee}`,
+
+    function (err, res) {
+      if (err) throw err;
+      console.log(res.affectedRows + " Role Added\n");
+      init();
+    });
+};
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// View function
+
+async function viewInfo() {
+  const { letsGo } = await inquirer.prompt({
+    name: 'letsGo',
+    type: 'list',
+    message: 'Select a topic',
+    choices: ['Employees', 'Departments', 'Roles']
   });
-  const data = await connection.query("SELECT * FROM top5000 WHERE ?", {
-    song,
-  });
-  console.table(data);
-  init();
+  let query;
+  if (letsGo === 'Employees') {
+    query = `(SELECT  e.first_name, e.last_name,
+  role.title, role.salary, CONCAT(department.name) AS department,
+  CONCAT(m.first_name, ' ', m.last_name) AS 'Manager'
+  FROM employee AS e
+  LEFT JOIN employee m ON m.id = e.manager_id
+  INNER JOIN role ON e.role_id = role.id
+  INNER JOIN department ON role.dept_id = department.id
+  ORDER BY manager ASC) ORDER BY department`;
+  } else if (letsGo === 'Departments') {
+    query = `SELECT dept FROM department`;
+  } else if (letsGo === 'Roles') {
+    query = `SELECT title, salary AS department_name FROM role INNER JOIN department ON role.dept_id = department.id ORDER BY title ASC`;
+    const data = await connection.query(query);
+    console.table(data);
+    init();
+  }
 }

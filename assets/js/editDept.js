@@ -69,4 +69,4 @@ async function remove() {
         }
     );
 }
-module.exports = { editDepartments, add, remove } 
+module.exports = editDepartments, add, remove 

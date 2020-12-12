@@ -7,10 +7,7 @@ const questions = [
             "Edit Department",
             "Edit Employee Role",
             "Edit Employee",
-            "View All Employees",
-            "Search Employees By Manager",
-            "Update Employee Managers",
-            "Total Budget By Department",
+            "View Information",
             "Exit",
         ]
     }];
