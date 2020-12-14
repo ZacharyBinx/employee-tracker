@@ -53,7 +53,8 @@ async function editDepartments() {
     init();
   }
 };
-
+///////////////////////////////////////////////
+////add department function
 async function addDepartment() {
   const departmentName = await inquirer.prompt({
     name: "department",
@@ -75,7 +76,8 @@ async function addDepartment() {
       init();
     });
 }
-
+//////////////////////////////////////////////////
+////remove department function
 async function remDepartment() {
   connection.query(
     "SELECT dept AS departments FROM department",
@@ -146,17 +148,6 @@ async function addEmployee() {
       message: "Is the employee a manager?",
     },
   ]);
-  switch (add.roleID) {
-    case "Intern":
-      add.roleID = 1;
-      break;
-    case "IT":
-      add.roleID = 2;
-      break;
-    case "Janitor":
-      add.roleID = 3;
-      break;
-  }
   switch (add.managerID) {
     case true:
       add.managerID = 1;
@@ -216,19 +207,18 @@ async function editRole() {
     name: "role",
     type: "list",
     message: "What would you like to do?",
-    choices: ["Add Role", "Update Role", "Remove Role", "Exit"],
+    choices: ["Add Role", "Update Role", "Exit"],
   });
   if (role === "Add Role") {
     addRole();
   } else if (role === "Update Role") {
     updateRole();
-    // } else if (role === "Remove Role") {
-    //   removeRole();
   } else {
     init();
   }
 };
-
+//////////////////////////////////////////////
+////add role function
 async function addRole() {
   const departments = await connection.query(
     "SELECT dept, id FROM department",
@@ -306,20 +296,19 @@ async function viewInfo() {
   });
   let query;
   if (letsGo === 'Employees') {
-    query = `(SELECT  e.first_name, e.last_name,
-  role.title, role.salary, CONCAT(department.name) AS department,
-  CONCAT(m.first_name, ' ', m.last_name) AS 'Manager'
-  FROM employee AS e
-  LEFT JOIN employee m ON m.id = e.manager_id
-  INNER JOIN role ON e.role_id = role.id
-  INNER JOIN department ON role.dept_id = department.id
-  ORDER BY manager ASC) ORDER BY department`;
+    query = `SELECT  employee.first_name, employee.last_name,
+      role.title, role.salary, department.dept AS department
+      FROM ((employee
+      INNER JOIN role ON employee.role_id = role.id)
+      INNER JOIN department ON role.dept_id = department.id)
+      ORDER BY department`;
   } else if (letsGo === 'Departments') {
     query = `SELECT dept FROM department`;
   } else if (letsGo === 'Roles') {
-    query = `SELECT title, salary AS department_name FROM role INNER JOIN department ON role.dept_id = department.id ORDER BY title ASC`;
-    const data = await connection.query(query);
-    console.table(data);
-    init();
+    query = `SELECT role.title, role.dept_id AS id, department.dept AS department FROM role 
+    INNER JOIN department ON role.dept_id = department.id ORDER BY title ASC`;
   }
+  const data = await connection.query(query);
+  console.table(data);
+  init();
 }
